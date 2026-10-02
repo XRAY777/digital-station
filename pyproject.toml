@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=75,<82"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digital-station"
+version = "0.1.0"
+description = "Offline-first railway station planning prototype"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+  "alembic>=1.14,<2",
+  "pwdlib[argon2]>=0.2,<1",
+  "fastapi>=0.115,<1",
+  "psycopg[binary]>=3.2,<4",
+  "sqlalchemy>=2.0,<3",
+  "uvicorn[standard]>=0.34,<1",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.28,<1",
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<9",
+  "ruff>=0.11,<1",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*", "database*", "simulation*", "schedules*", "optimization*", "metrics*"]
+
+[tool.setuptools.package-data]
+database = ["migrations/*.mako", "migrations/versions/*.py"]
+"backend.app" = ["static/docs/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["backend", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["backend"]
+
+[tool.uv]
+package = true

@@ -1,0 +1,77 @@
+name: digital-station
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-station}
+      POSTGRES_USER: ${POSTGRES_USER:-station}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-station}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-station}
+    command: ["sh", "-c", "alembic upgrade head && python -m scripts.demo_data seed"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      APP_ENV: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-station}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-station}
+      STATION_HOST: 0.0.0.0
+      STATION_PORT: 8000
+      STATION_AI_PROVIDER: ${AI_PROVIDER:-none}
+      STATION_AI_BASE_URL: ${STATION_AI_BASE_URL:-}
+      STATION_AI_MODEL: ${STATION_AI_MODEL:-local-model}
+      STATION_AI_API_KEY: ${STATION_AI_API_KEY:-}
+      STATION_HISTORY_HOURS: ${STATION_HISTORY_HOURS:-48}
+      STATION_ALLOWED_ORIGINS: ${STATION_ALLOWED_ORIGINS:-}
+      STATION_TRUSTED_PROXIES: "*"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    logging:
+      driver: local
+      options:
+        max-size: 10m
+        max-file: "3"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "${STATION_HTTP_PORT:-8080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,19 @@
+{
+  "name": "digital-station",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @digital-station/frontend dev",
+    "build": "pnpm --filter @digital-station/frontend build",
+    "lint": "pnpm --filter @digital-station/frontend lint",
+    "typecheck": "pnpm --filter @digital-station/frontend typecheck",
+    "test": "pnpm --filter @digital-station/frontend test",
+    "test:python": "uv run pytest",
+    "lint:python": "uv run ruff check backend tests",
+    "typecheck:python": "uv run mypy"
+  }
+}

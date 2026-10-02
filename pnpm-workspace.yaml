@@ -1,0 +1,6 @@
+packages:
+  - frontend
+allowBuilds:
+  '@scarf/scarf': false
+minimumReleaseAgeExclude:
+  - swagger-ui-dist@5.33.1
